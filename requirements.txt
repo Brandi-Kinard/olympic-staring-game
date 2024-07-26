@@ -1,41 +1,9 @@
-absl-py
-altair
-blinker
-cachetools
-click
-contourpy
-cycler
 dlib==19.24.4  # Specific version needed due to potential build issues with newer versions
 gspread
-h5py
-idna
-imageio
-imageio-ffmpeg
-ipywidgets
-Jinja2
-joblib
-matplotlib
 numpy
 oauth2client
 opencv-python-headless  # Using headless to avoid GUI dependencies in server environments
 pandas
 pillow
-protobuf
-pyasn1
-pyasn1-modules
-python-dateutil
-pytz
 requests
-rsa
-scikit-image
-scikit-learn
-scipy
 streamlit
-tensorboard
-tensorflow==2.16.1  # Specified due to specific API usages that may change in newer versions
-tensorflow-hub
-tqdm
-urllib3
-Werkzeug
-
-
