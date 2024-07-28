@@ -9,6 +9,38 @@ import base64
 import psycopg2
 import os
 import hashlib
+import streamlit.components.v1 as components
+import socketio
+
+# create a Socket.IO server
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+app = socketio.ASGIApp(sio)
+
+# define a socket connection event
+@sio.event
+def connect(sid, environ):
+    print('Client connected:', sid)
+
+@sio.event
+def disconnect(sid):
+    print('Client disconnected:', sid)
+
+@sio.on('frame')
+async def handle_frame(sid, data):
+    try:
+        file_bytes = np.asarray(bytearray(data), dtype=np.uint8)
+        frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        blink_detected, game_time = process_frame(frame)  # Ensure this function is robust
+        username = 'extracted_username_here'  # Properly fetch the username
+
+        if blink_detected:
+            update_leaderboard(username, game_time)
+            leaderboard = get_leaderboard()
+            await sio.emit('leaderboard_update', {'leaderboard': leaderboard}, room=sid)
+    except Exception as e:
+        await sio.emit('error', {'message': str(e)}, room=sid)
+        print(f"Error handling frame data: {str(e)}")
+
 
 # Initialize necessary components
 detector = dlib.get_frontal_face_detector()
@@ -38,17 +70,21 @@ except Exception as e:
     print(f"Failed to load shape predictor due to: {e}")
 
 # Set up the database connection
-DATABASE_URL = os.environ['DATABASE_URL']
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-c = conn.cursor()
-c.execute('''
-    CREATE TABLE IF NOT EXISTS leaderboard (
-        username TEXT, 
-        team TEXT, 
-        score REAL
-    );
-''')
-conn.commit()
+try:
+    DATABASE_URL = os.environ['DATABASE_URL']
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS leaderboard (
+            username TEXT, 
+            team TEXT, 
+            score REAL
+        );
+    ''')
+    conn.commit()
+except Exception as e:
+    st.error(f"Failed to connect to the database or execute a query: {str(e)}")
+
 
 def eye_aspect_ratio(eye_points, facial_landmarks):
     p2_p6 = np.linalg.norm([facial_landmarks.part(eye_points[1]).x - facial_landmarks.part(eye_points[5]).x,
@@ -271,34 +307,70 @@ def countdown(t):
 def start_game(user_name, team):
     if 'leaderboard' not in st.session_state:
         st.session_state.leaderboard = []
-    camera = cv2.VideoCapture(0)
-    if not camera.isOpened():
-        st.error("Failed to open camera. Please make sure your webcam is connected.")
-        return
-    frame_window = st.empty()
-    game_start_time = time.time()
 
-    while True:
-        ret, frame = camera.read()
-        if not ret:
-            continue
+    # Embed custom HTML to access the webcam
+    webcam_html = """
+    <html>
+    <body>
+    <!-- Stream video from webcam -->
+    <video id="video" width="640" height="480" autoplay></autoplay>
+    <div id="leaderboard"></div> <!-- Container for the leaderboard -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+    var video = document.querySelector("#video");
+    var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+    
+    function sendFrame() {
+        video.requestVideoFrameCallback(() => {
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                socket.emit('frame', blob);
+            });
+            sendFrame(); // Recursively send frames
+        });
+    }
+    
+    socket.on('blink_detected', function(data) {
+        document.body.innerHTML += `<div style="position: fixed; top: 10px; left: 10px;">🎈 Blink detected at ${data.game_time} seconds! 🎈</div>`;
+    });
+    
+    socket.on('leaderboard_update', function(data) {
+        updateLeaderboardUI(data.leaderboard);
+    });
+    
+    function updateLeaderboardUI(leaderboard) {
+        var leaderboardHTML = '<ul>';
+        for (var i = 0; i < leaderboard.length; i++) {
+            leaderboardHTML += `<li>${leaderboard[i].username}: ${leaderboard[i].score} seconds</li>`;
+        }
+        leaderboardHTML += '</ul>';
+        document.getElementById('leaderboard').innerHTML = leaderboardHTML;
+    }
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_window.image(frame)
-        faces = detector(frame)
-        ear_list = []
+    if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+                sendFrame(); // Start sending frames when the stream is ready
+            })
+            .catch(function (error) {
+                console.log("Something went wrong!", error);
+            });
+    }
+    </script>
+    </body>
+    </html>
+    """
 
-        for face in faces:
-            landmarks = predictor(frame, face)
-            ear = eye_aspect_ratio([36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47], landmarks)
-            ear_list.append(ear)
+    components.html(webcam_html, height=480)
 
-        if ear_list and min(ear_list) < 0.2:
-            game_time = time.time() - game_start_time
-            update_leaderboard(user_name, team, game_time)
-            show_toast_messages(game_time, user_name)
-            st.balloons()
-            break
+    if st.button('Analyze'):
+        # Placeholder for sending video frames to server for analysis
+        st.write('Analyzing...')  # Implement this part based on your application's needs
 
 def update_leaderboard(user_name, team, game_time):
     c.execute('INSERT INTO leaderboard (username, team, score) VALUES (%s, %s, %s)', (user_name, team, game_time))
