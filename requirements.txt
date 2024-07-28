@@ -4,3 +4,4 @@ numpy
 pandas
 dlib
 psycopg2-binary
+python-socketio
