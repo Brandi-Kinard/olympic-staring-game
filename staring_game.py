@@ -8,16 +8,34 @@ import pandas as pd
 import base64
 import psycopg2
 import os
+import hashlib
 
 # Initialize necessary components
 detector = dlib.get_frontal_face_detector()
 
-# Attempt to load the shape predictor
+def file_hash(filename):
+    with open(filename, "rb") as f:
+        file_hash = hashlib.md5()
+        while chunk := f.read(4096):
+            file_hash.update(chunk)
+    return file_hash.hexdigest()
+
+def log_file_details(path):
+    if os.path.exists(path):
+        file_size = os.path.getsize(path)
+        file_md5 = file_hash(path)
+        print(f"File exists: {path}, Size: {file_size}, MD5: {file_md5}")
+    else:
+        print(f"File not found: {path}")
+
+# Log details about the shape predictor file
+log_file_details('shape_predictor_68_face_landmarks.dat')
+
+# Then attempt to load it with dlib
 try:
     predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 except Exception as e:
-    st.error(f"Failed to load shape predictor: {str(e)}")
-    raise
+    print(f"Failed to load shape predictor due to: {e}")
 
 # Set up the database connection
 DATABASE_URL = os.environ['DATABASE_URL']
