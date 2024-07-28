@@ -2,8 +2,5 @@ streamlit
 opencv-python-headless
 numpy
 pandas
-<<<<<<< HEAD
 dlib
-=======
-dlib
->>>>>>> f07ff73b2733cfea3f9e5d53f5e6408e0df5d3d5
+psycopg2-binary
