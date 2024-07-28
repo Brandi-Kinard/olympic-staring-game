@@ -5,44 +5,7 @@ import numpy as np
 import time
 import sqlite3
 import pandas as pd
-import webbrowser
-from PIL import Image
 import base64
-import datetime
-import os
-print(os.environ)
-import os
-
-
-import io
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-from google.oauth2 import service_account
-
-if 'GOOGLE_PRIVATE_KEY' in os.environ:
-    print("GOOGLE_PRIVATE_KEY is set.")
-else:
-    print("GOOGLE_PRIVATE_KEY is not set.")
-    exit(1)  # Exit the script if the key is not set
-
-# Define the scope
-scope = [
-    'https://www.googleapis.com/auth/spreadsheets',  # Allows read/write access to sheets
-    'https://www.googleapis.com/auth/drive'  # Allows file creation and management
-]
-
-
-def authenticate_gspread():
-    """Authenticate and return a gspread client using OAuth2 credentials."""
-    json_keyfile_path = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
-    if json_keyfile_path is None:
-        raise ValueError("Environment variable GOOGLE_SERVICE_ACCOUNT_JSON is not set.")
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        json_keyfile_path, scope
-    )
-    client = gspread.authorize(creds)
-    return client
 
 # Initialize necessary components
 detector = dlib.get_frontal_face_detector()
@@ -53,17 +16,6 @@ conn = sqlite3.connect('leaderboard.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS leaderboard (username TEXT, team TEXT, score REAL)''')
 conn.commit()
-
-
-# Function to write feedback to file
-def record_feedback(user_feedback, username='Anonymous'):
-    client = authenticate_gspread()
-    sheet = client.open('App Feedback').sheet1  # Open the sheet and select the first worksheet
-    # Add a new row with the current timestamp, username, and feedback
-    from datetime import datetime
-    timestamp = datetime.now().isoformat()
-    sheet.append_row([timestamp, username, user_feedback])
-    return "Feedback recorded successfully."
 
 def eye_aspect_ratio(eye_points, facial_landmarks):
     p2_p6 = np.linalg.norm([facial_landmarks.part(eye_points[1]).x - facial_landmarks.part(eye_points[5]).x,
@@ -139,22 +91,17 @@ def main():
     st.text(" ")
 
     with st.sidebar:
-        col1, col2, col3 = st.columns([1, 0.5, 0.5
-                                       ])
-        # Using the middle column to center the image with adjusted width
-        with col1:
-            st.image('eyeqlogohorizontalbw.png', width=100, use_column_width=True)
 
         st.markdown(f"""<div style='text-align: left;'>
-                                <span style='font-size: 20px; color: #2E9BF5; font-weight: bold;'>Welcome to EyeQ!</span>
+                                <span style='font-size: 20px; font-weight: bold;'>Welcome to EyeQ!</span>
                             </div>""", unsafe_allow_html=True)
         st.markdown("""
             Challenge your skills in the Olympic-style staring contest and see how long you can last without blinking.
         """, unsafe_allow_html=True)
 
-        st.markdown("[What's the purpose of this app?](https://github.com/Brandi-Kinard/olympic-staring-game)")
 
         st.markdown("---")
+
 
         # How to Play Section
         st.header("How to Play")
@@ -183,27 +130,25 @@ def main():
             - **Clear Face:** Avoid wearing glasses or masks that might obstruct your face.
         """, unsafe_allow_html=True)
 
-        st.markdown("---")
-
-        # Sidebar for feedback
-        st.sidebar.markdown("### How do you like this app?")
-        col1, col2 = st.sidebar.columns(2)
-        with col1:
-            if st.button("👍"):
-                result = record_feedback("Thumbs Up")
-                st.sidebar.success(result)
-        with col2:
-            if st.button("👎"):
-                result = record_feedback("Thumbs Down")
-                st.sidebar.error(result)
-
         # Extra lines of space
         st.text(" ")
         st.text(" ")
 
-        st.caption("Made by [Brandi Kinard](https://www.linkedin.com/in/brandi-kinard/)")
+        st.markdown("[What's the purpose of this app?](https://github.com/Brandi-Kinard/olympic-staring-game)")
 
         st.markdown("---")
+
+        col1, col2, col3 = st.columns([1, 0.5, 0.5
+                                       ])
+        # Using the middle column to center the image with adjusted width
+        with col1:
+            st.image('eyeqlogohorizontalbw.png', width=100, use_column_width=True)
+        st.text(" ")
+        st.caption("Made by [Brandi Kinard](https://www.linkedin.com/in/brandi-kinard/)")
+
+        # Extra lines of space
+        st.text(" ")
+        st.text(" ")
 
         st.caption("This app is a personal project for entertainment purposes only and is not affiliated with the "
                    "Olympic Games. It uses your webcam to simulate a staring contest but does not store or transmit any "
