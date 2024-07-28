@@ -6,15 +6,24 @@ import time
 import sqlite3
 import pandas as pd
 import base64
+import psycopg2
+import os
 
 # Initialize necessary components
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
 # Set up the database connection
-conn = sqlite3.connect('leaderboard.db')
+DATABASE_URL = os.environ['DATABASE_URL']
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS leaderboard (username TEXT, team TEXT, score REAL)''')
+c.execute('''
+    CREATE TABLE IF NOT EXISTS leaderboard (
+        username TEXT, 
+        team TEXT, 
+        score REAL
+    );
+''')
 conn.commit()
 
 def eye_aspect_ratio(eye_points, facial_landmarks):
