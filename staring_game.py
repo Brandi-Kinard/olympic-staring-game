@@ -232,7 +232,7 @@ def main():
 
 
 def username_exists(username):
-    c.execute("SELECT 1 FROM leaderboard WHERE username = ?", (username,))
+    c.execute("SELECT 1 FROM leaderboard WHERE username = %s", (username,))
     return c.fetchone() is not None
 
 def countdown(t):
@@ -277,7 +277,7 @@ def start_game(user_name, team):
             break
 
 def update_leaderboard(user_name, team, game_time):
-    c.execute('INSERT INTO leaderboard (username, team, score) VALUES (?, ?, ?)', (user_name, team, game_time))
+    c.execute('INSERT INTO leaderboard (username, team, score) VALUES (%s, %s, %s)', (user_name, team, game_time))
     conn.commit()
     c.execute('SELECT username, team, score FROM leaderboard ORDER BY score DESC')
     records = c.fetchall()
