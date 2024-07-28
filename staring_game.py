@@ -296,4 +296,8 @@ def show_toast_messages(game_time, user_name):
     st.toast(f'Blink detected at {game_time:.2f} seconds! {user_name} ranked #{rank} {medal_icon}')
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     main()
+=======
+    main()
+>>>>>>> f07ff73b2733cfea3f9e5d53f5e6408e0df5d3d5
