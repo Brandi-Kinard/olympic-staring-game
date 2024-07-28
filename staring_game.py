@@ -11,7 +11,13 @@ import os
 
 # Initialize necessary components
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+
+# Attempt to load the shape predictor
+try:
+    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+except Exception as e:
+    st.error(f"Failed to load shape predictor: {str(e)}")
+    raise
 
 # Set up the database connection
 DATABASE_URL = os.environ['DATABASE_URL']
