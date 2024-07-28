@@ -1,9 +1,5 @@
-dlib==19.24.4  # Specific version needed due to potential build issues with newer versions
-gspread
-numpy
-oauth2client
-opencv-python-headless  # Using headless to avoid GUI dependencies in server environments
-pandas
-pillow
-requests
 streamlit
+opencv-python-headless
+numpy
+pandas
+dlib
