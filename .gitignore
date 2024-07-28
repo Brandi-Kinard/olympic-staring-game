@@ -1,0 +1,6 @@
+eyeq-staring-game-cff19960ac65.json
+__pycache__/
+*.pyc
+.DS_Store  # for macOS users
+.env
+
