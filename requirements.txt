@@ -6,3 +6,4 @@ dlib
 psycopg2-binary
 python-socketio
 hypercorn
+python-socketio[asyncio_client]
