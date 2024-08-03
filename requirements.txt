@@ -5,4 +5,4 @@ pandas
 dlib
 psycopg2-binary
 python-socketio[asyncio_client]
-hypercorn
+hypercorn==0.17.3
