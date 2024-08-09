@@ -1,1 +1,1 @@
-web: hypercorn staring_game:app --bind 0.0.0.0:$PORT
+web: sh setup.sh && streamlit run staring_game.py
